@@ -1,0 +1,69 @@
+version: '3'
+services:
+  guacd:
+    image: guacamole/guacd
+    restart: always
+    env_file: .env
+    ports:
+      - 4822:4822
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USER}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_HOSTNAME: "${DB_HOSTNAME}"
+    links:
+      - db
+    networks:
+      - guacamole-network
+  guacamole:
+    image: guacamole/guacamole
+    restart: always
+    env_file: .env
+    ports:
+      - 8080:8080
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USER}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_HOSTNAME: "${DB_HOSTNAME}"
+      GUACD_HOSTNAME: "${GUACD_HOSTNAME}"
+    links:
+      - db
+    networks:
+      - guacamole-network
+  db:
+    image: mariadb
+    ports:
+      - 3300:3306
+    env_file: .env
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USER}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - db:/var/lib/mysql
+      - ./scripts:/scripts
+    networks:
+      - guacamole-network
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    env_file: .env
+    restart: always
+    environment:
+      PMA_HOST: "${DB_HOSTNAME}"
+      PMA_USER: "${DB_USER}"
+      PMA_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+    ports:
+      - 10000:80
+    networks:
+      - guacamole-network
+
+volumes:
+    db:
+
+networks:
+    guacamole-network:
+        driver: bridge
